@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MC Box server mine list and special items</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  body { font-family: 'Press Start 2P', cursive; background: #87ceeb; margin:0; padding:20px; color:#fff; position:relative; }
+  h1 { text-align:center; color:#ffd700; text-shadow:2px 2px #000; }
+  .tabs { text-align:center; margin-bottom:20px; }
+  .tab-btn { padding:10px 20px; margin:0 5px; background:#8b4513; color:#fff; border:3px solid #000; cursor:pointer; font-family:'Press Start 2P', cursive; font-size:10px; border-radius:5px; }
+  .tab-btn.active { background:#a0522d; }
+  .container { max-width:600px; margin:auto; background:#4b3621; padding:20px; border:5px solid #000; border-radius:10px; box-shadow:5px 5px #000; margin-bottom:20px; }
+  label { display:block; margin:5px 0; font-size:10px; }
+  input[type="text"], select { width:100%; padding:5px; border:3px solid #000; border-radius:3px; font-family:'Press Start 2P', cursive; margin-bottom:10px; }
+  button, .custom-file-btn { padding:10px; margin-top:5px; background:#8b4513; color:#fff; border:3px solid #000; font-family:'Press Start 2P', cursive; cursor:pointer; font-size:10px; border-radius:5px; text-align:center; display:inline-block; vertical-align:middle; min-width:100px; }
+  button:hover, .custom-file-btn:hover { background:#a0522d; }
+  .mine, .special-item { background:#228B22; padding:10px; margin-bottom:10px; border:3px solid #000; border-radius:5px; }
+  .mine button, .special-item button { margin-top:5px; background:#ff4500; }
+  .mine strong, .special-item strong { color:#ffd700; }
+  .edit-input { width:100%; margin-bottom:5px; padding:3px; border:2px solid #000; border-radius:3px; font-family:'Press Start 2P', cursive; }
+  .action-buttons { margin-top:5px; }
+  #notification { text-align:center; background:#ff8c00; padding:10px; margin-bottom:10px; display:none; border-radius:5px; font-size:12px; color:#000; border: 3px solid #000; box-shadow: 3px 3px #000; }
+  .file-input-wrapper { display:inline-block; position: relative; margin-top:5px; }
+  .file-input-wrapper input[type="file"] { position: absolute; left:0; top:0; opacity:0; width:100%; height:100%; cursor:pointer; }
+
+  .world-tabs { display:flex; flex-wrap: wrap; margin-bottom:10px; justify-content:center; }
+  .world-tab { padding:10px 15px; margin:0 5px 5px 5px; background:#556b2f; color:#ffd700; cursor:pointer; border:3px solid #000; border-radius:5px; font-weight:bold; text-align:center; }
+  .world-tab.active { background:#6b8e23; }
+  .world-content { display:none; margin-bottom:15px; }
+
+  #supportArea { position:absolute; top:20px; right:20px; text-align:right; }
+  #supportAvatar { width:50px; height:50px; border-radius:50%; cursor:pointer; border:3px solid #000; }
+  #supportDropdown { display:none; background:#4b3621; color:#fff; border:3px solid #000; border-radius:5px; padding:10px; margin-top:5px; text-align:left; min-width:200px; }
+  #supportDropdown a { display:block; color:#ffd700; margin-bottom:5px; font-size:10px; text-decoration:none; }
+  #supportDropdown a:hover { text-decoration:underline; }
+  #supportDropdown p { font-size:8px; margin:0 0 5px 0; color:#fff; }
+</style>
+</head>
+<body>
+
+<div id="supportArea">
+  <img src="https://i.imgur.com/pc7jim3.jpeg" id="supportAvatar" onclick="toggleSupportDropdown()" alt="Support Avatar">
+  <div id="supportDropdown">
+    <a href="https://ko-fi.com/taravask" target="_blank">Ko-fi</a>
+    <p>Support me with a small donation!</p>
+    <a href="https://guns.lol/taravask" target="_blank">Guns.lol</a>
+    <p>Check out my socials here!</p>
+    <a href="https://discord.gg/VZfp2tzfrG" target="_blank">Discord Server</a>
+    <p>Join the community and get help!</p>
+    <a href="https://github.com/TaraVasque" target="_blank">GitHub profile</a>
+    <p>check out some of my other projects ;3</p>
+  </div>
+</div>
+
+<h1>MC Box server mine list and special items</h1>
+<div id="notification"></div>
+
+<div class="tabs">
+  <button class="tab-btn active" onclick="showTab('mineTab', this)">Mines</button>
+  <button class="tab-btn" onclick="showTab('specialTab', this)">Special Items</button>
+</div>
+
+<div id="mineTab">
+<div class="container">
+  <label>Select Existing World:
+    <select id="worldDropdown"><option value="">--New World--</option></select>
+  </label>
+  <label>Or Type New World Name: <input type="text" id="worldName" placeholder="e.g., Overworld"></label>
+  <label>Mine Name: <input type="text" id="mineName" placeholder="e.g., Coal Mine"></label>
+  <label>Regular Item: <input type="text" id="regularItem" placeholder="e.g., Coal"></label>
+  <label>Compressed Item: <input type="text" id="compressedItem" placeholder="e.g., Compressed Coal"></label>
+  <label>Super Compressed Item: <input type="text" id="superCompressedItem" placeholder="e.g., Super Compressed Coal"></label>
+  <button onclick="addMine()">Add Mine</button>
+  <button onclick="downloadMineCSV()">Download CSV</button>
+  
+  <div class="file-input-wrapper">
+    <button class="custom-file-btn">Choose CSV File</button>
+    <input type="file" id="csvFileMine" accept=".csv" onchange="document.querySelector('.custom-file-btn').textContent = this.files[0]?.name || 'Choose CSV File'">
+  </div>
+  <button onclick="importMineCSV()">Import CSV (Overwrite)</button>
+</div>
+
+<h2 style="text-align:center;">Mine List:</h2>
+<div class="world-tabs" id="worldTabs"></div>
+<div id="mineList" class="container"></div>
+</div>
+
+<div id="specialTab" style="display:none;">
+<div class="container">
+  <label>Item Name: <input type="text" id="specialName" placeholder="e.g., Golden Pickaxe"></label>
+  <label>Effect / Description: <input type="text" id="specialEffect" placeholder="e.g., Mines 2x faster"></label>
+  <label>How to Obtain: <input type="text" id="specialObtain" placeholder="e.g., Found in treasure chest"></label>
+  <button onclick="addSpecial()">Add Special Item</button>
+  <button onclick="downloadSpecialCSV()">Download CSV</button>
+  
+  <div class="file-input-wrapper">
+    <button class="custom-file-btn">Choose CSV File</button>
+    <input type="file" id="csvFileSpecial" accept=".csv" onchange="document.querySelectorAll('.custom-file-btn')[1].textContent = this.files[0]?.name || 'Choose CSV File'">
+  </div>
+  <button onclick="importSpecialCSV()">Import CSV (Overwrite)</button>
+</div>
+<h2 style="text-align:center;">Special Items List:</h2>
+<div id="specialList" class="container"></div>
+</div>
+
+<script>
+let savedMines = JSON.parse(localStorage.getItem('mineList')) || [];
+let savedSpecials = JSON.parse(localStorage.getItem('specialList')) || [];
+
+const mineListElement = document.getElementById('mineList');
+const worldDropdown = document.getElementById('worldDropdown');
+const worldTabsElement = document.getElementById('worldTabs');
+const specialListElement = document.getElementById('specialList');
+const notification = document.getElementById('notification');
+
+function toggleSupportDropdown() {
+  const dropdown = document.getElementById('supportDropdown');
+  dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+}
+
+function showNotification(message) {
+  notification.textContent = message;
+  notification.style.display = 'block';
+  setTimeout(() => { notification.style.display = 'none'; }, 3000);
+}
+
+function showTab(tabId, btn) {
+  document.getElementById('mineTab').style.display = 'none';
+  document.getElementById('specialTab').style.display = 'none';
+  document.getElementById(tabId).style.display = 'block';
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// ---- Mines Functions ----
+function updateWorldDropdown() {
+  const worlds = [...new Set(savedMines.map(m => m.world))];
+  worldDropdown.innerHTML = '<option value="">--New World--</option>';
+  worlds.forEach(world => {
+    const option = document.createElement('option');
+    option.value = world;
+    option.textContent = world;
+    worldDropdown.appendChild(option);
+  });
+}
+
+function displayMines() {
+  updateWorldDropdown();
+  mineListElement.innerHTML = '';
+  worldTabsElement.innerHTML = '';
+  const worlds = {};
+  savedMines.forEach(mine => {
+    if (!worlds[mine.world]) worlds[mine.world] = [];
+    worlds[mine.world].push(mine);
+  });
+  const worldNames = Object.keys(worlds);
+  if(worldNames.length === 0) return;
+  worldNames.forEach((worldName, i) => {
+    const tab = document.createElement('div');
+    tab.className = 'world-tab';
+    tab.textContent = worldName;
+    if(i===0) tab.classList.add('active');
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.world-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      renderWorldContent(worldName, worlds[worldName]);
+    });
+    worldTabsElement.appendChild(tab);
+  });
+  renderWorldContent(worldNames[0], worlds[worldNames[0]]);
+}
+
+function renderWorldContent(worldName, mines) {
+  mineListElement.innerHTML = '';
+  mines.forEach((mine, index) => {
+    const mineDiv = document.createElement('div');
+    mineDiv.className = 'mine';
+    mineDiv.innerHTML = `<strong>${mine.name}</strong><br>Regular: ${mine.regular}<br>Compressed: ${mine.compressed}<br>Super Compressed: ${mine.superCompressed}
+      <div class="action-buttons">
+        <button onclick="editMine(${savedMines.indexOf(mine)})">Edit</button>
+        <button onclick="deleteMine(${savedMines.indexOf(mine)})">Delete</button>
+      </div>`;
+    mineListElement.appendChild(mineDiv);
+  });
+}
+
+function addMine() {
+  const selectedWorld = worldDropdown.value;
+  const typedWorld = document.getElementById('worldName').value.trim();
+  const worldName = typedWorld || selectedWorld;
+  const mineName = document.getElementById('mineName').value.trim();
+  const regular = document.getElementById('regularItem').value.trim();
+  const compressed = document.getElementById('compressedItem').value.trim();
+  const superCompressed = document.getElementById('superCompressedItem').value.trim();
+  if (!worldName || !mineName || !regular || !compressed || !superCompressed) { alert("Please fill in all fields!"); return; }
+  savedMines.push({ world: worldName, name: mineName, regular, compressed, superCompressed });
+  localStorage.setItem('mineList', JSON.stringify(savedMines));
+  displayMines();
+  ['worldName','mineName','regularItem','compressedItem','superCompressedItem'].forEach(id => document.getElementById(id).value='');
+}
+
+function editMine(index) {
+  const mine = savedMines[index];
+  const mineDivs = mineListElement.querySelectorAll('.mine');
+  const mineDiv = mineDivs[index % mineDivs.length];
+  mineDiv.innerHTML = `<input class="edit-input" id="editWorld${index}" value="${mine.world}" placeholder="World">
+    <input class="edit-input" id="editName${index}" value="${mine.name}" placeholder="Mine Name">
+    <input class="edit-input" id="editRegular${index}" value="${mine.regular}" placeholder="Regular">
+    <input class="edit-input" id="editCompressed${index}" value="${mine.compressed}" placeholder="Compressed">
+    <input class="edit-input" id="editSuper${index}" value="${mine.superCompressed}" placeholder="Super Compressed">
+    <div class="action-buttons">
+      <button onclick="saveMine(${index})">Save</button>
+      <button onclick="displayMines()">Cancel</button>
+    </div>`;
+}
+
+function saveMine(index) {
+  const world = document.getElementById(`editWorld${index}`).value.trim();
+  const name = document.getElementById(`editName${index}`).value.trim();
+  const regular = document.getElementById(`editRegular${index}`).value.trim();
+  const compressed = document.getElementById(`editCompressed${index}`).value.trim();
+  const superCompressed = document.getElementById(`editSuper${index}`).value.trim();
+  if (!world || !name || !regular || !compressed || !superCompressed) { alert("Please fill in all fields!"); return; }
+  savedMines[index] = { world, name, regular, compressed, superCompressed };
+  localStorage.setItem('mineList', JSON.stringify(savedMines));
+  displayMines();
+}
+
+function deleteMine(index) { if (confirm("Are you sure you want to delete this mine?")) { savedMines.splice(index, 1); localStorage.setItem('mineList', JSON.stringify(savedMines)); displayMines(); } }
+
+function downloadMineCSV() {
+  if (!savedMines.length) { alert("No mines to export!"); return; }
+  let csvContent = "World,Mine Name,Regular,Compressed,Super Compressed\n";
+  savedMines.forEach(m => { csvContent += `"${m.world}","${m.name}","${m.regular}","${m.compressed}","${m.superCompressed}"\n`; });
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = "mine_list.csv"; a.click();
+}
+
+function importMineCSV() {
+  const file = document.getElementById('csvFileMine').files[0]; if (!file) { alert("Please select a CSV file!"); return; }
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    if(!confirm("Importing this CSV will OVERWRITE your current mine list. Continue?")) return;
+    const rows = e.target.result.split(/\r?\n/).slice(1); const newMines = [];
+    rows.forEach(row => { if (!row.trim()) return; const cols = row.split(','); if (cols.length >=5) newMines.push({ world: cols[0].replace(/"/g,'').trim(), name: cols[1].replace(/"/g,'').trim(), regular: cols[2].replace(/"/g,'').trim(), compressed: cols[3].replace(/"/g,'').trim(), superCompressed: cols[4].replace(/"/g,'').trim() }); });
+    savedMines = newMines; localStorage.setItem('mineList', JSON.stringify(savedMines)); displayMines(); showNotification("Mine list overwritten with imported CSV!");
+  };
+  reader.readAsText(file);
+}
+
+// ---- Special Items Functions ----
+function displaySpecials() {
+  specialListElement.innerHTML = '';
+  savedSpecials.forEach((item,index) => {
+    const div = document.createElement('div'); div.className = 'special-item';
+    div.innerHTML = `<strong>${item.name}</strong><br>Effect: ${item.effect}<br>Obtain: ${item.obtain}
+      <div class="action-buttons">
+        <button onclick="editSpecial(${index})">Edit</button>
+        <button onclick="deleteSpecial(${index})">Delete</button>
+      </div>`;
+    specialListElement.appendChild(div);
+  });
+}
+
+function addSpecial() {
+  const name = document.getElementById('specialName').value.trim();
+  const effect = document.getElementById('specialEffect').value.trim();
+  const obtain = document.getElementById('specialObtain').value.trim();
+  if (!name || !effect || !obtain) { alert("Please fill in all fields!"); return; }
+  savedSpecials.push({ name,effect,obtain });
+  localStorage.setItem('specialList', JSON.stringify(savedSpecials));
+  displaySpecials();
+  ['specialName','specialEffect','specialObtain'].forEach(id=>document.getElementById(id).value='');
+}
+
+function editSpecial(index) {
+  const item = savedSpecials[index];
+  const divs = specialListElement.querySelectorAll('.special-item'); 
+  const div = divs[index % divs.length];
+  div.innerHTML = `<input class="edit-input" id="editSName${index}" value="${item.name}" placeholder="Name">
+    <input class="edit-input" id="editSEffect${index}" value="${item.effect}" placeholder="Effect">
+    <input class="edit-input" id="editSObtain${index}" value="${item.obtain}" placeholder="Obtain">
+    <div class="action-buttons">
+      <button onclick="saveSpecial(${index})">Save</button>
+      <button onclick="displaySpecials()">Cancel</button>
+    </div>`;
+}
+
+function saveSpecial(index) {
+  const name = document.getElementById(`editSName${index}`).value.trim();
+  const effect = document.getElementById(`editSEffect${index}`).value.trim();
+  const obtain = document.getElementById(`editSObtain${index}`).value.trim();
+  if (!name || !effect || !obtain) { alert("Please fill in all fields!"); return; }
+  savedSpecials[index] = { name,effect,obtain };
+  localStorage.setItem('specialList', JSON.stringify(savedSpecials));
+  displaySpecials();
+}
+
+function deleteSpecial(index) { if (confirm("Are you sure you want to delete this special item?")) { savedSpecials.splice(index,1); localStorage.setItem('specialList', JSON.stringify(savedSpecials)); displaySpecials(); } }
+
+function downloadSpecialCSV() {
+  if (!savedSpecials.length) { alert("No special items to export!"); return; }
+  let csvContent = "Item Name,Effect,Obtain\n";
+  savedSpecials.forEach(i => { csvContent += `"${i.name}","${i.effect}","${i.obtain}"\n`; });
+  const blob = new Blob([csvContent], { type:'text/csv;charset=utf-8;' }); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download="special_items.csv"; a.click();
+}
+
+function importSpecialCSV() {
+  const file = document.getElementById('csvFileSpecial').files[0]; if(!file) { alert("Select a CSV file!"); return; }
+  const reader = new FileReader();
+  reader.onload=function(e) {
+    if(!confirm("Importing will OVERWRITE current special items. Continue?")) return;
+    const rows = e.target.result.split(/\r?\n/).slice(1); const newItems=[];
+    rows.forEach(r=>{ if(!r.trim()) return; const cols=r.split(','); if(cols.length>=3) newItems.push({ name: cols[0].replace(/"/g,'').trim(), effect: cols[1].replace(/"/g,'').trim(), obtain: cols[2].replace(/"/g,'').trim() }); });
+    savedSpecials=newItems; localStorage.setItem('specialList', JSON.stringify(savedSpecials)); displaySpecials(); showNotification("Special items overwritten with imported CSV!");
+  };
+  reader.readAsText(file);
+}
+
+// Initial display
+displayMines();
+displaySpecials();
+</script>
+
+</body>
+</html>
